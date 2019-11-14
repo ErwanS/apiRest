@@ -6,8 +6,8 @@ exports.db = (function() {
 //local mysql db connection
 var connection = mysql.createConnection({
     host     : 'localhost',
-    user     : 'bdeuser',
-    password : 'bde2019!',
+    user     : 'root',
+    password : 'root',
     database : 'bde',
 })
 
