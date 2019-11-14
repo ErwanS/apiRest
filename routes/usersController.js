@@ -42,27 +42,23 @@ module.exports = {
         })
     })
   },
-
-
   login: function(req, res) {
-
-      connection.query("SELECT iduser, userpassword FROM users WHERE email = '" + req.body.email + "'", function(error, rows, field) {
-        iduser = rows[0].iduser;
-        if (!!error) {
-            console.log('Requête non valide');
-        } else if (rows.length == 0) {
-            res.json({message: "Utilsateur introuvable"});
-        } else {
-            bcrypt.compare(req.body.userpassword, rows[0].userpassword, function(errBycrypt, resBycrypt) {
-                if (resBycrypt) {
-                    return res.status(200).json({
-                        message: "Connexion réussie !",
-                    })
-                } else {
-                    return res.status(403).json({ "error": "invalid password"});
-                }
-          })
+      connection.query("SELECT * FROM users WHERE email = ?", [req.params['email']], function(error, rows, field) {
+        if (error)
+        {
+          console.log("Requete invalide !");
         }
-      })
-    },
+        else
+        {
+          res.json({id: rows.iduser,
+                    firstname: rows.firstname,
+                    lastname: rows.lastname,
+                    campus: rows.campus,
+                    email: rows.email,
+                    password: rows.userpassword,
+                    role: rows.privilege
+          });
+        }
+      });
+  }
 }
