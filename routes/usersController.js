@@ -1,64 +1,84 @@
 // Imports
 
-var bcrypt  = require('bcrypt');
+var bcrypt = require('bcrypt');
 var jwtUtils = require('../utils/jwt.utils');
 var server = require('../server').connection;
-var bcrypt = require('bcrypt');
-var jwtUtils = require ('../utils/jwt.utils');
+var jwtUtils = require('../utils/jwt.utils');
 var connection = require('../db').db;
-const EMAIL_REGEX     = /^[a-zA-Z-]+@[a-zA-Z-]+\.[a-zA-Z]{2,6}$/;
-const PASSWORD_REGEX  = /^(?=.\d).{4,12}$/;
+const EMAIL_REGEX = /^[a-zA-Z-]+@[a-zA-Z-]+\.[a-zA-Z]{2,6}$/;
+const PASSWORD_REGEX = /^(?=.\d).{4,12}$/;
 
 // Routes
 
 module.exports = {
 
-  register: function(req, res) {
-
-    //Params
-    var email = req.body.email;
-    var username = req.body.username;
-    var userpassword = req.body.userpassword;
-
-    if (email == null || username == null || userpassword == null){
-      console.log(email);
-      console.log(username);
-      console.log(userpassword);
-    return res.status(400).json({'error': 'missing parameters'});
-    }
-
-    bcrypt.hash(req.body.userpassword, 7, function(err, bcryptedUserPassword) {
-      connection.query(("INSERT INTO users (lastname, firstname, campus, email, username, userpassword, privilege) VALUES ('" + req.body.lastname + "', '" + req.body.firstname + "', '" + req.body.campus + "', '" + req.body.email + "', '" + req.body.username + "', '" + bcryptedUserPassword +  "', '" + req.body.privilege + "')"), function(error, rows, field) {
-        if (!!error) {
-            console.log('Requête non valide');
-            return res.status(500).json("Inscription impossible");
-        } else if (!EMAIL_REGEX.test(email)){
-            return res.status(400).json({ 'error': 'l\'email n\'est pas valide'});
+  register: function (req, res) {
+    console.log(req.body.email);
+    console.log(req.body.password);
+    console.log(req.body.firstname);
+    console.log(req.body.lastname);
+    console.log(req.body.campus);
+    
+    if (req.body.email && req.body.password && req.body.firstname && req.body.lastname && req.body.campus) {
+      connection.query("INSERT INTO users (lastname, firstname, campus, email, password, role) VALUES (?, ?, ?, ?, ?, ?)", [req.body.lastname, req.body.firstname, req.body.campus, req.body.email, req.body.password, 'USER'], function (error, result, field) {
+        if (error) {
+          console.log('Requête non valide');
+          return res.status(400).send(error);
+        } else if (!EMAIL_REGEX.test(req.body.email)) {
+          return res.status(400).json({ 'error': 'l\'email n\'est pas valide' });
         }
-          else {
-            console.log('Requête acceptée');
-            return res.status(201).json("Inscription réussie !");
-            }
-        })
-    })
-  },
-  login: function(req, res) {
-      connection.query("SELECT * FROM users WHERE email = ?", [req.params['email']], function(error, rows, field) {
-        if (error)
-        {
-          console.log("Requete invalide !");
-        }
-        else
-        {
-          res.json({id: rows.iduser,
-                    firstname: rows.firstname,
-                    lastname: rows.lastname,
-                    campus: rows.campus,
-                    email: rows.email,
-                    password: rows.userpassword,
-                    role: rows.privilege
-          });
+        else {
+          console.log('Requête acceptée');
+          return res.status(200).send("Inscription réussie !");
         }
       });
+    }else{
+      console.log("missing");
+      
+      return res.status(203).send("missing parameters");
+    }
+
+    
+
+  },
+  login: function (req, res) {
+
+    connection.query('SELECT * FROM ?? WHERE ?? = ?', ['users', 'email', req.params['email']], function (error, rows, field) {
+
+      let result = JSON.parse(JSON.stringify(rows))[0];
+
+      if (error || result == null){
+	console.log("Echec");
+        return res.status(404).send("Utilisateur introuvable");
+      }else{
+	console.log("Renvoie de : ", result.email);
+        return res.status(200).json({
+          id: result.iduser,
+          firstname: result.firstname,
+          lastname: result.lastname,
+          campus: result.campus,
+          email: result.email,
+          password: result.password,
+          role: result.role
+        });
+      }
+    });
+  },
+  search: function (req, res) {
+
+    connection.query('SELECT * FROM ?? WHERE ?? = ?', ['users', 'iduser', req.params['id']], function (error, rows, field) {
+
+      let result = JSON.parse(JSON.stringify(rows))[0];
+
+      if (error || result == null){
+        return res.status(404).send("Utilisateur introuvable");
+      }else{
+        return res.status(200).json({
+          firstname: result.firstname,
+          lastname: result.lastname,
+          campus: result.campus
+        });
+      }
+    });
   }
 }
